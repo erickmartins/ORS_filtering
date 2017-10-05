@@ -45,7 +45,8 @@ def calculate_height_diff(image, slice_size):
         It uses call-by-value and changes the image arg, so it doesn't
         need to return anything.
         """
-    image += inv_image(slice_size, slice_size, image)
+    np.add(image, inv_image(slice_size, slice_size, image), out=image,
+           casting="unsafe")
     image[image < 0] = 0
 
 
