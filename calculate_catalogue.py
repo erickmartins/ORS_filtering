@@ -4,6 +4,20 @@ from linidx import linidx_take
 
 
 def calculate_catalogue(dist):
+    """ Calculates a catalogue of integrand values for all possible
+     combinations of height differences and distances. By quantizing the
+     image as 8-bits, there are only 256 possible height differences,
+     which means this is actually feasible.
+
+    Args:
+        dist: Matrix with all distances from pixel of interest to the
+        square around it. It is used both to know how big the catalogue
+        needs to be and for calculating the possible slopes.
+
+    Returns:
+        catalogue: a three-dimensional array with integrand values
+        for all possible values of slope and height difference
+        """
     # print(dist)
     prefactor = np.power(4.0 / (np.pi), 3)
     dist_size = dist.shape[0]
@@ -14,7 +28,8 @@ def calculate_catalogue(dist):
     catalogue -= np.log(np.square(catalogue) + 1)
     catalogue -= np.square(np.arctan(catalogue))
     # print(catalogue)
-    return prefactor * catalogue
+    catalogue = prefactor * catalogue
+    return catalogue
 
 
 def integrand_catalogue(catalogue, height_diff):
