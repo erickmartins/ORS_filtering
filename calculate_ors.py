@@ -3,6 +3,8 @@ from skimage.color import rgb2gray
 import numpy as np
 from itertools import product
 import matplotlib.pyplot as plt
+from linidx import linidx_take
+from calculate_catalogue import calculate_catalogue
 
 
 def read_image():
@@ -94,6 +96,32 @@ def integrand(slope, prefactor):
     return prefactor * slope
 
 
+def integrand_catalogue(catalogue, height_diff):
+    """ Calculates the function to be integrated for calculation of the
+    ORS. We are using the function suggested by Earl and Metzler in
+    their technical paper about it, but most quadratic functions on
+    the slope should be decent. Our function is:
+    f(x) = 2 arctan(x) - log(x^2 + 1) - arctan^2(x)
+    In this version, this is done through looking up the correct
+    elements in a catalogue of values that was pre-calculated for all
+    possible height differences (and, therefore, slopes).
+
+    Args:
+        catalogue: a three-dimensional array with integrand values
+        for all possible values of slope and height difference; needs
+        to be pre-calculated
+        height_diff: a two-dimensional array with differences in height
+        between the pixel being calculated and its immediate neighbours
+        inside a 2 x slice-sized square
+
+    Returns:
+        integrand: a two-dimensional matrix with the values of the
+        integrand for all the height difference values received
+        """
+    integrand = linidx_take(catalogue, height_diff)
+    return integrand
+
+
 def calculate_ors(image):
     """ Here's the meat of the code. We calculate ORS values for each
     pixel in the image by generating a slice_size sized mask around
@@ -115,7 +143,7 @@ def calculate_ors(image):
     # slice_size defines the matrix size to be used in the rest of the
     # code. It should be bigger than the expected features in the image.
 
-    slice_size = 30
+    slice_size = 50
     max_y, max_x = image.shape
 
     # generate the distance matrix. It will be the same one for all
@@ -124,10 +152,11 @@ def calculate_ors(image):
     dist = calculate_dist(slice_size, slice_size, 2 * slice_size + 1,
                           2 * slice_size + 1)
 
+    catalogue = calculate_catalogue(dist)
+
     # initialise the return matrix. it's smaller than the image!
 
     ors = np.zeros((max_y - 2 * slice_size, max_x - 2 * slice_size))
-    prefactor = np.power(4.0 / (np.pi), 3)
 
     # we will end our for loop short because not all pixels in the
     # image will be analysed (we lose the borders)
@@ -145,12 +174,12 @@ def calculate_ors(image):
         # calculated.
 
         calculate_height_diff(height_diff, slice_size)
-        slope = np.divide(height_diff, dist)
+        # slope = np.divide(height_diff, dist)
 
         # we calculate all integrands, take their square root and sum
         # (i.e. "integrate") over them, ignoring the eventual NaNs
 
-        local_ors = integrand(slope, prefactor)
+        local_ors = integrand_catalogue(catalogue, height_diff)
         local_ors = np.sqrt(local_ors)
         ors[j][i] = np.nansum(local_ors)
     return ors
