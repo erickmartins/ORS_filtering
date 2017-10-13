@@ -12,6 +12,9 @@ def read_image():
     filename = askopenfilename()
     image = io.imread(filename)
     image = rgb2gray(image)
+    image = image * 255
+    image = image.astype(int)
+    print(image)
     return image
 
 
