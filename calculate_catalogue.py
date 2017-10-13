@@ -20,9 +20,19 @@ def calculate_catalogue(dist):
         """
     # print(dist)
     prefactor = np.power(4.0 / (np.pi), 3)
+
+    # we take advantage of dist matrix being square heavily
     dist_size = dist.shape[0]
+
+    # initialise catalogue array with the right shape
     catalogue = np.zeros((256, dist_size, dist_size))
+
+    # calculate the slopes from the dist matrix for all values of
+    # height difference
     catalogue = [i / dist[:, :] for i in range(256)]
+
+    # the same old integrand operations are then performed over the
+    # whole matrix at once for speed
     catalogue *= 2
     catalogue *= np.arctan(catalogue)
     catalogue -= np.log(np.square(catalogue) + 1)
